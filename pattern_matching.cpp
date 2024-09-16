@@ -10,6 +10,15 @@
 // #define match 10
 #define TEST(...) __VA_OPT__(<<) __VA_ARGS__
 
+class Unit {
+public:
+	Unit() = default;
+	Unit(int field_) : field(field_) {}
+	bool operator==(const Unit& unit) { if ( this->field == unit.field ) return true; else return false; }
+	
+	int field;
+};
+
 class pattern {
 public:
 	template<typename T>
@@ -38,14 +47,17 @@ public:
 		if ( this->type == first.type ) {
 			const char* type = first.type;
 			bool isValueEqual = false;
-			if ( !strcmp(type, "i") ) {
+ 			if ( !strcmp(type, typeid(int).name() ) ) {
 				if ( *(int*)this->value == *(int*)first.value )
 					isValueEqual = true;
-			} else if ( !strcmp(type, "d") ) {
+			} else if ( !strcmp(type, typeid(double).name() ) ) {
 				if ( *(double*)this->value == *(double*)first.value )
 					isValueEqual = true;
-			} else if ( !strcmp(type, "b") ) {
+			} else if ( !strcmp(type, typeid(bool).name() ) ) {
 				if ( *(bool*)this->value == *(bool*)first.value )
+					isValueEqual = true;
+			} else if ( !strcmp(type, typeid(Unit).name() ) ) {
+				if ( *(Unit*)this->value == *(Unit*)first.value )
 					isValueEqual = true;
 			}
 
@@ -121,26 +133,23 @@ public:
 
 class match {
 public:
-	// template<typename T>
-	// pattern operator()(T expression) {
-	// 	pattern pat;
-	// 	pat.type = typeid(T).name();
-		
-	// 	pat.value = new T;
-	// 	new((T*)pat.value) T(expression);
-
-	// 	return pat;
-	// }
-
 	template<typename T>
-	pattern_custom<T> operator()(T expression) {
-		pattern_custom<T> pat;
-		pat.value = expression;
+	pattern operator()(T expression) {
+		pattern pat;
+		pat.type = typeid(T).name();
+		
+		pat.value = new T;
+		new((T*)pat.value) T(expression);
+
 		return pat;
 	}
-};
 
-class Unit {
+	// template<typename T>
+	// pattern_custom<T> operator()(T expression) {
+	// 	pattern_custom<T> pat;
+	// 	pat.value = expression;
+	// 	return pat;
+	// }
 };
 
 int main(int argc, char* argv[])
@@ -150,10 +159,10 @@ int main(int argc, char* argv[])
 	pattern_custom<int> pattern_i;
 	pattern_custom<Unit> pattern_u;
 	match match;
-	Unit unit;
- 	match(true)(
-		pattern_i | 10   >>= []{ return 40000; },
-		pattern_b | true >>= []{ return 40000; }
+	Unit unit(10);
+ 	match(unit)(
+		pattern | Unit(10) >>= []{ return 40000; },
+		pattern | true     >>= []{ return 5000; }
 //		pattern_u | Unit() >>= []{ return 56000; }
 		);
 
