@@ -10,6 +10,8 @@
 // #define match 10
 #define TEST(...) __VA_OPT__(<<) __VA_ARGS__
 
+static unsigned int counter = 0;
+
 class Unit {
 public:
 	Unit() = default;
@@ -22,19 +24,20 @@ public:
 class pattern {
 public:
 	template<typename T>
-	pattern operator|(T value) {
+	pattern& operator|(T value) {
 		std::cout << sizeof(value) << std::endl;
-		pattern pat;
-		unsigned int sizeOfData = sizeof(value);
-		pat.type = typeid(T).name();
+		unsigned int typesNumber = this->typesNumber;
+		this->type[typesNumber] = typeid(T).name();
+		std::cout << "operator type: " << this->type[typesNumber] << std::endl;
 		
-		pat.value = new T;
-		new(pat.value) T(value);
-		return pat;
+		this->value[typesNumber] = new T;
+		new(this->value[typesNumber]) T(value);
+		++this->typesNumber;
+		return *this;
 	}
 
 	template<typename Lambda>
-	pattern operator>>=(Lambda lambda) {
+	pattern& operator>>=(Lambda lambda) {
 		this->lambda = lambda;
 		return *this;
 	}
@@ -44,33 +47,43 @@ public:
 	
 	template<typename T2, typename... Args>
 	void operator()(T2 first, Args... args) {
-		if ( this->type == first.type ) {
-			const char* type = first.type;
-			bool isValueEqual = false;
- 			if ( !strcmp(type, typeid(int).name() ) ) {
-				if ( *(int*)this->value == *(int*)first.value )
-					isValueEqual = true;
-			} else if ( !strcmp(type, typeid(double).name() ) ) {
-				if ( *(double*)this->value == *(double*)first.value )
-					isValueEqual = true;
-			} else if ( !strcmp(type, typeid(bool).name() ) ) {
-				if ( *(bool*)this->value == *(bool*)first.value )
-					isValueEqual = true;
-			} else if ( !strcmp(type, typeid(Unit).name() ) ) {
-				if ( *(Unit*)this->value == *(Unit*)first.value )
-					isValueEqual = true;
-			}
+		std::cout << "static govno: " << counter << std::endl;
+		unsigned int typesNumber = first.typesNumber;
+		for ( int i = counter; i < typesNumber; ++i ) {
+			++counter;
+			std::cout << "i: " << i << std::endl;
+			std::cout << "first type before: " << first.type[i] << std::endl;
+			if ( this->type[i] == first.type[i] ) {
+				const char* type = first.type[i];
+				std::cout << "this type: " << this->type[i] << std::endl;
+				std::cout << "first type: " << type << std::endl;
+				bool isValueEqual = false;
+				if ( !strcmp(type, typeid(int).name() ) ) {
+					if ( *(int*)this->value[i] == *(int*)first.value[i] )
+						isValueEqual = true;
+				} else if ( !strcmp(type, typeid(double).name() ) ) {
+					if ( *(double*)this->value[i] == *(double*)first.value[i] )
+						isValueEqual = true;
+				} else if ( !strcmp(type, typeid(bool).name() ) ) {
+					if ( *(bool*)this->value[i] == *(bool*)first.value[i] )
+						isValueEqual = true;
+				} else if ( !strcmp(type, typeid(Unit).name() ) ) {
+					if ( *(Unit*)this->value[i] == *(Unit*)first.value[i] )
+						isValueEqual = true;
+				}
 
-			if ( isValueEqual )
-				std::cout << first.lambda() << std::endl;
+				if ( isValueEqual )
+					std::cout << first.lambda() << std::endl;
+			}
 		}
-		
+
 		operator()(args...);
 	}
 
 	int(*lambda)();
-	const char* type = "";
-	void* value = nullptr;
+	unsigned int typesNumber = 0;
+	const char* type[10];
+	void* value[10];
 };
 
 template <typename T>
@@ -132,15 +145,20 @@ public:
 };
 
 class match {
+	pattern pat;
 public:
-	template<typename T>
-	pattern operator()(T expression) {
-		pattern pat;
-		pat.type = typeid(T).name();
-		
-		pat.value = new T;
-		new((T*)pat.value) T(expression);
+	void operator()() {
+	}
 
+	template<typename T, typename ...Args>
+	pattern operator()(T expression, Args... args) {
+		unsigned int typesNumber = pat.typesNumber;
+		pat.type[typesNumber] = typeid(T).name();
+		
+		pat.value[typesNumber] = new T;
+		new((T*)pat.value[typesNumber]) T(expression);
+		++pat.typesNumber;
+		operator()(args...);
 		return pat;
 	}
 
@@ -160,8 +178,8 @@ int main(int argc, char* argv[])
 	pattern_custom<Unit> pattern_u;
 	match match;
 	Unit unit(10);
- 	match(unit)(
-		pattern | Unit(10) >>= []{ return 40000; },
+ 	match(unit, 100, true)(
+		pattern | Unit(10) | 100 | true >>= []{ return 40000; },
 		pattern | true     >>= []{ return 5000; }
 //		pattern_u | Unit() >>= []{ return 56000; }
 		);
