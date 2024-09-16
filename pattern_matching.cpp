@@ -26,18 +26,20 @@ public:
 	template<typename T>
 	pattern& operator|(T value) {
 		std::cout << sizeof(value) << std::endl;
-		unsigned int typesNumber = this->typesNumber;
-		this->type[typesNumber] = typeid(T).name();
-		std::cout << "operator type: " << this->type[typesNumber] << std::endl;
+		unsigned int patternNumber = this->patternNumber;
+		unsigned int typesNumber = this->typesNumber[patternNumber];
+		this->type[patternNumber][typesNumber] = typeid(T).name();
+		std::cout << "operator type: " << this->type[patternNumber][typesNumber] << std::endl;
 		
-		this->value[typesNumber] = new T;
-		new(this->value[typesNumber]) T(value);
-		++this->typesNumber;
+		this->value[patternNumber][typesNumber] = new T;
+		new(this->value[patternNumber][typesNumber]) T(value);
+		++this->typesNumber[patternNumber];
 		return *this;
 	}
 
 	template<typename Lambda>
 	pattern& operator>>=(Lambda lambda) {
+		++this->patternNumber;
 		this->lambda = lambda;
 		return *this;
 	}
@@ -48,42 +50,49 @@ public:
 	template<typename T2, typename... Args>
 	void operator()(T2 first, Args... args) {
 		std::cout << "static govno: " << counter << std::endl;
-		unsigned int typesNumber = first.typesNumber;
-		for ( int i = counter; i < typesNumber; ++i ) {
-			++counter;
+		unsigned int typesNumber = first.typesNumber[counter];
+		unsigned int patternIndex = counter;
+		bool isValueEqual = false;
+		for ( int i = 0; i < typesNumber; ++i ) {
 			std::cout << "i: " << i << std::endl;
-			std::cout << "first type before: " << first.type[i] << std::endl;
-			if ( this->type[i] == first.type[i] ) {
-				const char* type = first.type[i];
-				std::cout << "this type: " << this->type[i] << std::endl;
+			std::cout << "first type before: " << first.type[patternIndex][i] << std::endl;
+			if ( this->type[0][i] == first.type[patternIndex][i] ) {
+				const char* type = first.type[patternIndex][i];
+				std::cout << "this type: " << this->type[0][i] << std::endl;
 				std::cout << "first type: " << type << std::endl;
-				bool isValueEqual = false;
 				if ( !strcmp(type, typeid(int).name() ) ) {
-					if ( *(int*)this->value[i] == *(int*)first.value[i] )
+					if ( *(int*)this->value[0][i] == *(int*)first.value[patternIndex][i] )
 						isValueEqual = true;
 				} else if ( !strcmp(type, typeid(double).name() ) ) {
-					if ( *(double*)this->value[i] == *(double*)first.value[i] )
+					if ( *(double*)this->value[0][i] == *(double*)first.value[patternIndex][i] )
 						isValueEqual = true;
 				} else if ( !strcmp(type, typeid(bool).name() ) ) {
-					if ( *(bool*)this->value[i] == *(bool*)first.value[i] )
+					if ( *(bool*)this->value[0][i] == *(bool*)first.value[patternIndex][i] )
 						isValueEqual = true;
 				} else if ( !strcmp(type, typeid(Unit).name() ) ) {
-					if ( *(Unit*)this->value[i] == *(Unit*)first.value[i] )
+					if ( *(Unit*)this->value[0][i] == *(Unit*)first.value[patternIndex][i] )
 						isValueEqual = true;
+				} else {
+					isValueEqual = false;
 				}
-
-				if ( isValueEqual )
-					std::cout << first.lambda() << std::endl;
+			} else {
+				isValueEqual = false;
 			}
 		}
+		if ( isValueEqual )
+			std::cout << first.lambda() << std::endl;
 
+		
+		++counter;
+			  
 		operator()(args...);
 	}
 
 	int(*lambda)();
-	unsigned int typesNumber = 0;
-	const char* type[10];
-	void* value[10];
+	unsigned int typesNumber[10] = {};
+	unsigned int patternNumber = 0;
+	const char* type[10][10];
+	void* value[10][10];
 };
 
 template <typename T>
@@ -152,12 +161,12 @@ public:
 
 	template<typename T, typename ...Args>
 	pattern operator()(T expression, Args... args) {
-		unsigned int typesNumber = pat.typesNumber;
-		pat.type[typesNumber] = typeid(T).name();
+		unsigned int typesNumber = pat.typesNumber[0];
+		pat.type[0][typesNumber] = typeid(T).name();
 		
-		pat.value[typesNumber] = new T;
-		new((T*)pat.value[typesNumber]) T(expression);
-		++pat.typesNumber;
+		pat.value[0][typesNumber] = new T;
+		new((T*)pat.value[0][typesNumber]) T(expression);
+		++pat.typesNumber[0];
 		operator()(args...);
 		return pat;
 	}
@@ -178,7 +187,7 @@ int main(int argc, char* argv[])
 	pattern_custom<Unit> pattern_u;
 	match match;
 	Unit unit(10);
- 	match(unit, 100, true)(
+ 	match(true)(
 		pattern | Unit(10) | 100 | true >>= []{ return 40000; },
 		pattern | true     >>= []{ return 5000; }
 //		pattern_u | Unit() >>= []{ return 56000; }
