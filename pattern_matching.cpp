@@ -10,38 +10,13 @@
 // #define match 10
 #define TEST(...) __VA_OPT__(<<) __VA_ARGS__
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//template<typename T>
 class pattern {
 public:
 	template<typename T>
 	pattern operator|(T value) {
-		// std::cout << "type of pattern: " << typeid(this).name() << std::endl;
-		// std::cout << "type of value: " << typeid(value).name() << std::endl;
-//		this->value = value;
 		std::cout << sizeof(value) << std::endl;
 		pattern pat;
 		unsigned int sizeOfData = sizeof(value);
-//		pat.value = new T[sizeOfData];
-		// if ( typeid(T).name() == typeid(int).name() )
-		// 	pat.type = typeid(int).name();
-		// else if ( typeid(T).name() == typeid(double).name() )
-		// 	pat.type = typeid(double).name();
-		// else if ( typeid(T).name() == typeid(bool).name() )
-		// 	pat.type = typeid(bool).name();
 		pat.type = typeid(T).name();
 		
 		pat.value = new T;
@@ -52,44 +27,24 @@ public:
 	template<typename Lambda>
 	pattern operator>>=(Lambda lambda) {
 		this->lambda = lambda;
-		// this->value = value;
-//		std::cout << "value " << *(int*)this->value << std::endl;
 		return *this;
 	}
 
 	void operator()() {
-// 		std::cout << "last" << std::endl;
 	}
 	
 	template<typename T2, typename... Args>
 	void operator()(T2 first, Args... args) {
-		// std::cout << "this type " << typeid((*this).value).name() << std::endl;
-		// std::cout << "first type " << typeid(first.value).name() << std::endl;
-		// if ( this->value == first.value )
-		// 	std::cout << "labmda: " << first.lambda() << std::endl;
-		// else
-		// 	std::cout << "lamnda hu9mbda" << std::endl;
-
-		// if ( first.type == "int" )
-		// 	std::cout << "type: " << typeid(*(int*)first.value).name() << std::endl;
-		// else if ( first.type == "double" )
-		// 	std::cout << "type: " << typeid(*(double*)first.value).name() << std::endl;
-		// else if ( first.type == "bool" )
-		// 	std::cout << "type: " << typeid(*(bool*)first.value).name() << std::endl;
-
-//		std::cout << *(int*)this->value << std::endl;
-		// std::cout << this->type << std::endl;
-		// std::cout << first.type << std::endl;
 		if ( this->type == first.type ) {
 			const char* type = first.type;
 			bool isValueEqual = false;
-			if ( strcmp(type, "int") ) {
+			if ( !strcmp(type, "i") ) {
 				if ( *(int*)this->value == *(int*)first.value )
 					isValueEqual = true;
-			} else if ( strcmp(type, "double") ) {
+			} else if ( !strcmp(type, "d") ) {
 				if ( *(double*)this->value == *(double*)first.value )
 					isValueEqual = true;
-			} else if ( strcmp(type, "bool") ) {
+			} else if ( !strcmp(type, "b") ) {
 				if ( *(bool*)this->value == *(bool*)first.value )
 					isValueEqual = true;
 			}
@@ -102,42 +57,104 @@ public:
 	}
 
 	int(*lambda)();
-	// T value;
 	const char* type = "";
 	void* value = nullptr;
 };
 
-class match {
+template <typename T>
+class pattern_custom {
 public:
-	template<typename T>
-	pattern operator()(T expression) {
-		pattern pat;
-		// if ( typeid(T).name() == typeid(int).name() )
-		// 	pat.type = "int";
-		// else if ( typeid(T).name() == typeid(double).name() )
-		// 	pat.type = "double";
-		// else if ( typeid(T).name() == typeid(bool).name() )
-		// 	pat.type = "bool";
-		pat.type = typeid(T).name();
-		
-		pat.value = new T;
-		new((T*)pat.value) T(expression);
-
-		// pat.value = expression;
+	template<typename T2>
+	pattern_custom operator|(T2 value) {
+		pattern_custom pat;
+		pat.value = value;
 		return pat;
 	}
+
+	template<typename Lambda>
+	pattern_custom operator>>=(Lambda lambda) {
+		this->lambda = lambda;
+		return *this;
+	}
+
+	void operator()() {
+	}
+	
+	template<typename T2, typename... Args>
+	void operator()(T2 first, Args... args) {
+		// if ( this->type == first.type ) {
+		// 	const char* type = first.type;
+		// 	bool isValueEqual = false;
+		// 	if ( !strcmp(type, "i") ) {
+		// 		if ( *(int*)this->value == *(int*)first.value )
+		// 			isValueEqual = true;
+		// 	} else if ( !strcmp(type, "d") ) {
+		// 		if ( *(double*)this->value == *(double*)first.value )
+		// 			isValueEqual = true;
+		// 	} else if ( !strcmp(type, "b") ) {
+		// 		if ( *(bool*)this->value == *(bool*)first.value )
+		// 			isValueEqual = true;
+		// 	}
+
+		// 	if ( isValueEqual )
+		// 		std::cout << first.lambda() << std::endl;
+		// }
+		// std::cout << "this value: " << this->value << std::endl;
+		// std::cout << "first value: " << first.value << std::endl;
+
+		if ( typeid(this->value) == typeid(first.value) ) {
+			std::cout << "TEST" << std::endl;
+			bool isEqual = false;
+			if ( this->value == first.value )
+				isEqual = true;
+
+			if ( isEqual )
+				std::cout << first.lambda() << std::endl;
+		}
+		
+		operator()(args...);
+	}
+
+	int(*lambda)();
+	T value;
+};
+
+class match {
+public:
+	// template<typename T>
+	// pattern operator()(T expression) {
+	// 	pattern pat;
+	// 	pat.type = typeid(T).name();
+		
+	// 	pat.value = new T;
+	// 	new((T*)pat.value) T(expression);
+
+	// 	return pat;
+	// }
+
+	template<typename T>
+	pattern_custom<T> operator()(T expression) {
+		pattern_custom<T> pat;
+		pat.value = expression;
+		return pat;
+	}
+};
+
+class Unit {
 };
 
 int main(int argc, char* argv[])
 {
 	pattern pattern;
+	pattern_custom<bool> pattern_b;
+	pattern_custom<int> pattern_i;
+	pattern_custom<Unit> pattern_u;
 	match match;
-//	int(*ptr)() = [](){ return 10; };
+	Unit unit;
  	match(true)(
-		pattern | 10 >>= []{ return 10; },
-		pattern | 10 >>= []{ return 200; },
-		pattern | 10.0 >>= []{ return 3000; },
-		pattern | true >>= []{ return 40000; }
+		pattern_i | 10   >>= []{ return 40000; },
+		pattern_b | true >>= []{ return 40000; }
+//		pattern_u | Unit() >>= []{ return 56000; }
 		);
 
 	return 0;
