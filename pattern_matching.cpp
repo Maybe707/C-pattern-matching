@@ -49,16 +49,24 @@ public:
 	
 	template<typename T2, typename... Args>
 	void operator()(T2 first, Args... args) {
+//		std::cout << "iter: " << counter << std::endl;
 		unsigned int typesNumber = first.typesNumber[counter];
 		unsigned int patternIndex = counter;
 		bool isValueEqual = false;
 		unsigned int initializeCounterValue = 0;
-		if ( this->typesNumber[0] != typesNumber )
+		bool matchFlags[10];
+		if ( this->typesNumber[0] != typesNumber ) {
+			unsigned int i = 0;
+			while ( i < typesNumber ) {
+				matchFlags[i] = false;
+				++i;
+			}
 			initializeCounterValue = typesNumber;
+		}
 
 		for ( int i = initializeCounterValue; i < typesNumber; ++i ) {
 			if ( this->type[0][i] == typeid(const char*).name() && this->value[0][i] == "_" ) {
-				isValueEqual = true;
+				matchFlags[i] = true;
 				continue;
 			}
 			// std::cout << "i: " << i << std::endl;
@@ -69,23 +77,41 @@ public:
 				// std::cout << "first type: " << type << std::endl;
 				if ( !strcmp(type, typeid(int).name() ) ) {
 					if ( *(int*)this->value[0][i] == *(int*)first.value[patternIndex][i] )
-						isValueEqual = true;
+						matchFlags[i] = true;
+					else
+						matchFlags[i] = false;
 				} else if ( !strcmp(type, typeid(double).name() ) ) {
 					if ( *(double*)this->value[0][i] == *(double*)first.value[patternIndex][i] )
-						isValueEqual = true;
+						matchFlags[i] = true;
+					else
+						matchFlags[i] = false;
 				} else if ( !strcmp(type, typeid(bool).name() ) ) {
 					if ( *(bool*)this->value[0][i] == *(bool*)first.value[patternIndex][i] )
-						isValueEqual = true;
+						matchFlags[i] = true;
+					else
+						matchFlags[i] = false;
 				} else if ( !strcmp(type, typeid(Unit).name() ) ) {
 					if ( *(Unit*)this->value[0][i] == *(Unit*)first.value[patternIndex][i] )
-						isValueEqual = true;
+						matchFlags[i] = true;
+					else
+						matchFlags[i] = false;
 				} else {
-					isValueEqual = false;
+					matchFlags[i] = false;
 				}
 			} else {
-				isValueEqual = false;
+				matchFlags[i] = false;
 			}
 		}
+		for ( int i = 0; i < typesNumber; ++i ) {
+//			std::cout << "flag: " << matchFlags[i] << std::endl;
+			if ( matchFlags[i] ) {
+				isValueEqual = true;
+			} else {
+				isValueEqual = false;
+				break;
+			}
+		}
+		
 		if ( isValueEqual )
 			std::cout << first.lambda() << std::endl;
 
@@ -195,8 +221,11 @@ int main(int argc, char* argv[])
 	match match;
 	Unit unit(10);
 	Unit unit2(20);
- 	match(unit, 100, true)(
-		pattern | Unit(10) | "_" | true >>= []{ return 40000; },
+	int value = 0;
+	std::cout << "Type a number" << std::endl;
+	std::cin >> value;
+ 	match(false, value, false)(
+		pattern | Unit(10) | 10 | true >>= []{ return 40000; },
 		pattern | true | 10     >>= []{ return 5000; },
 		pattern | Unit(20) >>= []{ return 56000; },
 		pattern | 10.0     >>= []{ return 999; },
