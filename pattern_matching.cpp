@@ -55,8 +55,12 @@ public:
 		unsigned int initializeCounterValue = 0;
 		if ( this->typesNumber[0] != typesNumber )
 			initializeCounterValue = typesNumber;
-			
+
 		for ( int i = initializeCounterValue; i < typesNumber; ++i ) {
+			if ( this->type[0][i] == typeid(const char*).name() && this->value[0][i] == "_" ) {
+				isValueEqual = true;
+				continue;
+			}
 			// std::cout << "i: " << i << std::endl;
 			// std::cout << "first type before: " << first.type[patternIndex][i] << std::endl;
 			if ( this->type[0][i] == first.type[patternIndex][i] ) {
@@ -191,8 +195,8 @@ int main(int argc, char* argv[])
 	match match;
 	Unit unit(10);
 	Unit unit2(20);
- 	match(unit2)(
-		pattern | Unit(10) | 100 | true >>= []{ return 40000; },
+ 	match(unit, 100, true)(
+		pattern | Unit(10) | "_" | true >>= []{ return 40000; },
 		pattern | true | 10     >>= []{ return 5000; },
 		pattern | Unit(20) >>= []{ return 56000; },
 		pattern | 10.0     >>= []{ return 999; },
