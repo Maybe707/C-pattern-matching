@@ -25,11 +25,11 @@ class pattern {
 public:
 	template<typename T>
 	pattern& operator|(T value) {
-		std::cout << sizeof(value) << std::endl;
+//		std::cout << sizeof(value) << std::endl;
 		unsigned int patternNumber = this->patternNumber;
 		unsigned int typesNumber = this->typesNumber[patternNumber];
 		this->type[patternNumber][typesNumber] = typeid(T).name();
-		std::cout << "operator type: " << this->type[patternNumber][typesNumber] << std::endl;
+//		std::cout << "operator type: " << this->type[patternNumber][typesNumber] << std::endl;
 		
 		this->value[patternNumber][typesNumber] = new T;
 		new(this->value[patternNumber][typesNumber]) T(value);
@@ -49,17 +49,20 @@ public:
 	
 	template<typename T2, typename... Args>
 	void operator()(T2 first, Args... args) {
-		std::cout << "static govno: " << counter << std::endl;
 		unsigned int typesNumber = first.typesNumber[counter];
 		unsigned int patternIndex = counter;
 		bool isValueEqual = false;
-		for ( int i = 0; i < typesNumber; ++i ) {
-			std::cout << "i: " << i << std::endl;
-			std::cout << "first type before: " << first.type[patternIndex][i] << std::endl;
+		unsigned int initializeCounterValue = 0;
+		if ( this->typesNumber[0] != typesNumber )
+			initializeCounterValue = typesNumber;
+			
+		for ( int i = initializeCounterValue; i < typesNumber; ++i ) {
+			// std::cout << "i: " << i << std::endl;
+			// std::cout << "first type before: " << first.type[patternIndex][i] << std::endl;
 			if ( this->type[0][i] == first.type[patternIndex][i] ) {
 				const char* type = first.type[patternIndex][i];
-				std::cout << "this type: " << this->type[0][i] << std::endl;
-				std::cout << "first type: " << type << std::endl;
+				// std::cout << "this type: " << this->type[0][i] << std::endl;
+				// std::cout << "first type: " << type << std::endl;
 				if ( !strcmp(type, typeid(int).name() ) ) {
 					if ( *(int*)this->value[0][i] == *(int*)first.value[patternIndex][i] )
 						isValueEqual = true;
@@ -187,10 +190,13 @@ int main(int argc, char* argv[])
 	pattern_custom<Unit> pattern_u;
 	match match;
 	Unit unit(10);
- 	match(true)(
+	Unit unit2(20);
+ 	match(unit2)(
 		pattern | Unit(10) | 100 | true >>= []{ return 40000; },
-		pattern | true     >>= []{ return 5000; }
-//		pattern_u | Unit() >>= []{ return 56000; }
+		pattern | true | 10     >>= []{ return 5000; },
+		pattern | Unit(20) >>= []{ return 56000; },
+		pattern | 10.0     >>= []{ return 999; },
+		pattern | false | 10 | false >>= []{ return 111; }
 		);
 
 	return 0;
