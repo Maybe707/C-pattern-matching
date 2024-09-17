@@ -16,7 +16,7 @@ class Unit {
 public:
 	Unit() = default;
 	Unit(int field_) : field(field_) {}
-	bool operator==(const Unit& unit) { if ( this->field == unit.field ) return true; else return false; }
+	bool operator==(const Unit& unit) const { if ( this->field == unit.field ) return true; else return false; }
 	
 	int field;
 };
@@ -237,12 +237,15 @@ int main(int argc, char* argv[])
 	int value = 0;
 	std::cout << "Type a number" << std::endl;
 	std::cin >> value;
- 	match(unit, "pointer", true)(
-		pattern | Unit(10) | "pointer" | true >>= []{ return 40000; },
-		pattern | true | 10     >>= []{ return 5000; },
-		pattern | Unit(20) >>= []{ return 56000; },
-		pattern | 10.0     >>= []{ return 999; },
-		pattern | false | 10 | false >>= []{ return 111; }
+ 	match(unit, "qwe", 10, 10.0)(
+		pattern | Unit(10) | "pointer" | true  >>= []{ return 40000; },
+		pattern | true | 10                    >>= []{ return 5000; },
+		pattern | Unit(20)                     >>= []{ return 56000; },
+		pattern | 10.0                         >>= []{ return 999; },
+		pattern | false | 10 | false           >>= []{ return 111; },
+		pattern | Unit(10) | "qwe" | 30 | 10.0 >>= []{ return 7777; },
+		pattern | false | 10 | false           >>= []{ return 999; },
+		pattern | false | 10 | false           >>= []{ return 8888; }
 		);
 
 	return 0;
