@@ -65,7 +65,14 @@ public:
 		}
 
 		for ( int i = initializeCounterValue; i < typesNumber; ++i ) {
-			if ( this->type[0][i] == typeid(const char*).name() && this->value[0][i] == "_" ) {
+			// if ( this->type[0][i] == typeid(const char*).name() )
+			// 	std::cout << "value: " << *(const char**)this->value[0][i] << std::endl;
+
+			if ( first.type[patternIndex][i] == typeid(const char*).name() )
+				std::cout << "value: " << *(const char**)first.value[patternIndex][i] << std::endl;
+			
+			if ( first.type[patternIndex][i] == typeid(const char*).name() && !strcmp(*(const char**)first.value[patternIndex][i],"_") ) {
+				std::cout << "TEST" << std::endl;
 				matchFlags[i] = true;
 				continue;
 			}
@@ -92,6 +99,11 @@ public:
 						matchFlags[i] = false;
 				} else if ( !strcmp(type, typeid(Unit).name() ) ) {
 					if ( *(Unit*)this->value[0][i] == *(Unit*)first.value[patternIndex][i] )
+						matchFlags[i] = true;
+					else
+						matchFlags[i] = false;
+				} else if ( !strcmp(type, typeid(const char*).name() ) ) {
+					if ( *(const char**)this->value[0][i] == *(const char**)first.value[patternIndex][i] )
 						matchFlags[i] = true;
 					else
 						matchFlags[i] = false;
@@ -199,6 +211,7 @@ public:
 		
 		pat.value[0][typesNumber] = new T;
 		new((T*)pat.value[0][typesNumber]) T(expression);
+//		std::cout << *(T*)pat.value[0][typesNumber] << std::endl;
 		++pat.typesNumber[0];
 		operator()(args...);
 		return pat;
@@ -224,8 +237,8 @@ int main(int argc, char* argv[])
 	int value = 0;
 	std::cout << "Type a number" << std::endl;
 	std::cin >> value;
- 	match(false, value, false)(
-		pattern | Unit(10) | 10 | true >>= []{ return 40000; },
+ 	match(unit, "pointer", true)(
+		pattern | Unit(10) | "pointer" | true >>= []{ return 40000; },
 		pattern | true | 10     >>= []{ return 5000; },
 		pattern | Unit(20) >>= []{ return 56000; },
 		pattern | 10.0     >>= []{ return 999; },
